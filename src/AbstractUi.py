@@ -18,10 +18,10 @@ class AbstractUi():
         """
         Inicjalizacja klasy `AbstractUi`.
         ----
-        checkers -- instancja Warcabów obsługiwana przez nowy interfejs.
+         * `checkers`: instancja Warcabów obsługiwana przez nowy interfejs.
         """
 
-        self.checkers = checkers
+        self._checkers = checkers
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -30,19 +30,17 @@ class AbstractUi():
         Pokazanie lub wyłączenie interfejsu.
         Interfejs jest domyślnie WYŁĄCZONY.
         ----
-        state -- czy należy pokazać interfejs.
+         * `state`: czy należy pokazać interfejs.
         """
 
         pass
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    def updateBoard(self, checkers: Checkers) -> None:
+    def updateBoard(self) -> None:
         """
         Aktualizacja wyświetlanej planszy
         na podstawie aktualnego stanu gry.
-        ----
-        checkers -- instancja Warcabów.
         """
 
         pass

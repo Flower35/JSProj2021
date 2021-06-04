@@ -19,7 +19,7 @@ class TkinterUi(AbstractUi):
     WINDOW_WIDTH = 640
     WINDOW_HEIGHT = 480
 
-    FONT = ('Courier New', 16)
+    FONT = ('Courier New', 12)
 
     LABEL_X = 16
     LABEL_Y = 16
@@ -39,7 +39,7 @@ class TkinterUi(AbstractUi):
     BOARD_Y = 64
 
     RESETBTN_WIDTH = 128
-    RESETBTN_HEIGHT  = 128
+    RESETBTN_HEIGHT = 64
     RESETBTN_X = WINDOW_WIDTH - 16 - RESETBTN_WIDTH
     RESETBTN_Y = WINDOW_HEIGHT - 16 - RESETBTN_HEIGHT
 
@@ -49,32 +49,32 @@ class TkinterUi(AbstractUi):
         """
         Inicjalizacja klasy `TkinterUi`.
         ----
-        checkers -- instancja Warcabów obsługiwana przez nowy interfejs.
+         * checkers: instancja Warcabów obsługiwana przez nowy interfejs.
         """
-
-        # Główne okno Tkinter
 
         super().__init__(checkers)
 
-        self.master = tkinter.Tk()
+        # Główne okno Tkinter
 
-        self.master.title(self.WINDOW_TITLE)
-        self.master.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
+        self._master = tkinter.Tk()
+
+        self._master.title(self.WINDOW_TITLE)
+        self._master.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
 
         # Etykieta na komunikaty
 
         msgFrame = tkinter.Frame (
-            self.master, borderwidth = 2, relief = tkinter.SUNKEN,
+            self._master, borderwidth = 2, relief = tkinter.SUNKEN,
             width = self.LABEL_WIDTH, height = self.LABEL_HEIGHT,
             bg = '#FFFFFF'
         )
 
-        self.msgLabel = tkinter.Label (
+        self._msgLabel = tkinter.Label (
             msgFrame, text = 'Rozpocznij nową grę!',
             font = self.FONT, bg = '#FFFFFF'
         )
 
-        self.msgLabel.pack(fill = tkinter.BOTH, expand = True)
+        self._msgLabel.pack(fill = tkinter.BOTH, expand = True)
 
         msgFrame.pack_propagate(False)
         msgFrame.place(x = self.LABEL_X, y = self.LABEL_Y)
@@ -82,13 +82,13 @@ class TkinterUi(AbstractUi):
         # Przyciski na planszy
 
         buttonsFrame = tkinter.Frame (
-            self.master,
+            self._master,
             width = 16 + self.BOARD_WIDTH,
             height = 16 + self.BOARD_HEIGHT,
             bg = '#000000'
         )
 
-        self.boardButtons = []
+        self._boardButtons = []
 
         for y in range(self.BOARD_SIZE):
             rowOfButtons = []
@@ -103,9 +103,7 @@ class TkinterUi(AbstractUi):
                     height = self.BOARDBTN_HEIGHT
                 )
 
-                odd_x, odd_y = x % 2, y % 2
-
-                if (not odd_x and odd_y) or (not odd_y and odd_x):
+                if (x & 1) ^ (y & 1):
                     rowOfButtons.append(boardButton)
 
                     boardButton['bg'] = self.BOARDBTN_DARKCOLOR
@@ -122,7 +120,7 @@ class TkinterUi(AbstractUi):
                     boardButton['relief'] = tkinter.SUNKEN
                     boardButton['state'] = tkinter.DISABLED
 
-            self.boardButtons.append(rowOfButtons)
+            self._boardButtons.append(rowOfButtons)
 
         buttonsFrame.pack_propagate(False)
         buttonsFrame.place(x = self.BOARD_X, y = self.BOARD_Y)
@@ -130,7 +128,7 @@ class TkinterUi(AbstractUi):
         # Przycisk resetujący grę
 
         resetFrame = tkinter.Frame (
-            self.master,
+            self._master,
             width = self.RESETBTN_WIDTH,
             height = self.RESETBTN_HEIGHT,
         )
@@ -152,25 +150,37 @@ class TkinterUi(AbstractUi):
         """Patrz: `AbstractUi.enable`."""
 
         if state:
-            self.master.mainloop()
+            self._master.mainloop()
 
         else:
-            self.master.destroy()
+            self._master.destroy()
+
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    def updateBoard(self) -> None:
+        """Patrz: `AbstractIi.updateBoard`."""
+
+        textBoard = self._checkers.getTextBoard()
+
+        for y in range(self.BOARD_SIZE):
+            for x in range(self.BOARD_SIZE):
+                if (x & 1) ^ (y & 1):
+                    self._boardButtons[y][x]['text'] = textBoard[y][x]
+
+        self._msgLabel['text'] = self._checkers.getTextState()
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     def processBoardButton(self, x: int, y: int) -> None:
         """
-        Przetwarzanie po wciśnięciu przycisnku na planszy.
-        Następuje zrestowanie planszy w przypadku błędnych indeksów.
+        Przetwarzanie po wciśnięciu przycisku na planszy.
         ----
-        x -- indeks poziomy, od lewej do prawej [0-7].
-        y -- indeks pionowy, od góry do dołu [0-7].
+         * `x`: indeks kolumny, od lewej do prawej [0-7].
+         * `y`: indeks wiersza, od góry do dołu [0-7].
         """
 
-        self.msgLabel['text'] = f'x = {x}, y = {y}'
-
-        self.boardButtons[y][x]['text'] = 'O'
+        if self._checkers.processInput(x, y):
+            self.updateBoard()
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -179,7 +189,9 @@ class TkinterUi(AbstractUi):
         Wciśnięcie przycisku do uruchomienia nowej gry.
         """
 
-        self.msgLabel['text'] = 'NOT IMPLEMENTED!'
+        self._checkers.newGame()
+
+        self.updateBoard()
 
 
 ################################################################
