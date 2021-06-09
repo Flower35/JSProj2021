@@ -1,5 +1,5 @@
 ################################################################
-# Warcaby: "Checkers.py"
+# Warcaby: "/src/Checkers.py"
 ################################################################
 
 
@@ -18,6 +18,10 @@ class Checkers():
     """
 
     BOARD_SIZE = 8
+
+    # Gracz pierwszy (indeks 0, pionki CZARNE)
+    # Gracz drugi (indeks 1, pionki BIAŁE)
+    PLAYER_ICONS = ['C', 'B']
 
     GAMESTATE_TAKE = 0
     GAMESTATE_PUT  = 1
@@ -38,29 +42,29 @@ class Checkers():
 
         # Pusta plansza
 
-        self._board = [
+        self.__board = [
             [None] * self.BOARD_SIZE
             for _ in range(self.BOARD_SIZE)
         ]
 
         # Stan rozgrywki
 
-        self._state = self.GAMESTATE_END
+        self.__state = self.GAMESTATE_END
 
         # Informacja o danej turze
 
-        self._turninfo = self.TURNINFO_NOTHING
+        self.__turninfo = self.TURNINFO_NOTHING
 
         # Tura którego gracza?
 
-        self._player = (-1)
+        self.__player = (-1)
 
         # Pionki sprawdzane co każdą turę
 
-        self._selectedPawnPos = None
-        self._fightingPawnPos = None
-        self._multiFightPawn = None
-        self._obligatoryPawns = []
+        self.__selectedPawnPos = None
+        self.__fightingPawnPos = None
+        self.__multiFightPawn = None
+        self.__obligatoryPawns = []
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -74,17 +78,17 @@ class Checkers():
 
         for y in range(self.BOARD_SIZE):
             for x in range(self.BOARD_SIZE):
-                self._board[y][x] = WeakPawn(int(y < half)) \
+                self.__board[y][x] = WeakPawn(int(y < half)) \
                     if ((x & 1) ^ (y & 1)) \
                     and ((y < (half - 1)) or (y > half)) \
                     else None
 
-        self._state = self.GAMESTATE_TAKE
-        self._turninfo = self.TURNINFO_NOTHING
+        self.__state = self.GAMESTATE_TAKE
+        self.__turninfo = self.TURNINFO_NOTHING
 
-        self._player = 0
+        self.__player = 0
 
-        self._obligatoryPawns = []
+        self.__obligatoryPawns = []
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -95,7 +99,7 @@ class Checkers():
 
         return [
             [
-                '' if self._board[y][x] is None else str(self._board[y][x])
+                '' if self.__board[y][x] is None else str(self.__board[y][x])
                 for x in range(self.BOARD_SIZE)
             ]
             for y in range(self.BOARD_SIZE)
@@ -103,14 +107,99 @@ class Checkers():
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    def _playerName(self) -> str:
+    def setTextBoard(self, textBoard: List[List[str]]) -> None:
+        """
+        Rozłożenie planszy Warcabów wypełnionej określonymi
+        typami pionków ustawionymi na wybranych pozycjach.
+        ----
+        Funkcja przydatna do testów jednostkowych.
+        ----
+         * `textBoard`: dwuwymiarowa tablica tekstowa,
+          reprezentująca ułożenie pionków na planszy.
+          Zapis tekstowy jest podobny do tablicy zwracanej
+          w funkcji `Checkers.getTextBoard`.
+        """
+
+        try:
+            # Indeksy pól na planszy.
+            for y in range(self.BOARD_SIZE):
+                for x in range(self.BOARD_SIZE):
+
+                    t = textBoard[y][x]
+                    if (t is not None) and (type(t) != str):
+                        raise Exception()
+
+                    # Niepusty tekst na kolejnej pozycji w tablicy.
+                    if t and t.split():
+
+                        # Wystąpi wyjątek jeśli oznaczenie gracza
+                        # nie pasuje do obsługiwanych nazw.
+                        player = self.PLAYER_ICONS.index(t[0])
+
+                        if len(t) > 1:
+                            # Za długi tekst lub brak oznaczenia "damki"
+                            if (len(t) > 2) or ('d' != t[1]):
+                                raise Exception()
+
+                            pawnType = StrongPawn
+
+                        else:
+                            pawnType = WeakPawn
+
+                        pawn = pawnType(player)
+
+                    # Pusty tekst - brak pionka na tym polu.
+                    else:
+                        pawn = None
+
+                    self.__board[y][x] = pawn
+
+        except Exception as e:
+            #$$ print('Ojej... Checkers Exception!')
+            #$$ print('@' * 64)
+            #$$ print(textBoard)
+            #$$ print('@' * 64)
+            raise Exception (
+                "CHECKERS EXCEPTION: Niepoprawne dane wejściowe!\n" +
+                "Nie udało się podmienić planszy Warcabów."
+            )
+
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    def setCurrentPlayer(self, player: int) -> None:
+        """
+        Zmiana strony grającej pionkami w danym momencie.
+        ----
+        Funkcja przydatna do testów jednostkowych.
+        ----
+         * `player`: indeks gracza (0, 1).
+        """
+
+        self.__player = player
+
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    def __playerName(self) -> str:
         """
         Zwraca tekstową nazwę gracza (numer oraz kolor pionków).
         """
 
         colors = ['CZARN', 'BIAŁ']
 
-        return f'{1 + self._player} ({colors[self._player]}E)'
+        return f'{1 + self.__player} ({colors[self.__player]}E)'
+
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    def getGameState(self) -> Tuple[int, int]:
+        """"
+        Zwraca aktualny stan gry, informację o poprzedniej turze
+        oraz numer gracza w obecnej gurze.
+        ----
+        Funkcja przydatna do testów jednostkowych
+        po przetworzeniu danych wejściowych.
+        """
+
+        return self.__state, self.__turninfo, self.__player
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -121,34 +210,33 @@ class Checkers():
 
         def checkPreviusTurnInfo() -> str:
 
-            if self.TURNINFO_NOTHING != self._turninfo:
+            if self.TURNINFO_NOTHING != self.__turninfo:
 
-                if self.TURNINFO_WRONG_PLAYER == self._turninfo:
+                if self.TURNINFO_WRONG_PLAYER == self.__turninfo:
                     return 'To nie jest twój pionek!'
 
-                if self.TURNINFO_INVALID_MOVE == self._turninfo:
+                if self.TURNINFO_INVALID_MOVE == self.__turninfo:
                     return 'Ruch niedozwolony!'
 
-                if self.TURNINFO_FIGHT_AGAIN == self._turninfo:
+                if self.TURNINFO_FIGHT_AGAIN == self.__turninfo:
                     return 'Możesz bić dalej. Wskaż kolejne pole:'
 
-                if self.TURNINFO_OBLIG_FIGHT == self._turninfo:
+                if self.TURNINFO_OBLIG_FIGHT == self.__turninfo:
                     return 'Nie! Masz przynajmniej jedno obowiązkowe bicie.'
 
                 return None
 
         t = checkPreviusTurnInfo()
-        self._turninfo = self.TURNINFO_NOTHING
         if t is not None:
             return t
 
-        if self.GAMESTATE_END == self._state:
-            return f'Gra skończona. Wygrał gracz {self._playerName()}.'
+        if self.GAMESTATE_END == self.__state:
+            return f'Gra skończona. Wygrał gracz {self.__playerName()}.'
 
-        if self.GAMESTATE_TAKE == self._state:
-            return f'Tura gracza {self._playerName()}.'
+        if self.GAMESTATE_TAKE == self.__state:
+            return f'Tura gracza {self.__playerName()}.'
 
-        if self.GAMESTATE_PUT == self._state:
+        if self.GAMESTATE_PUT == self.__state:
             return f'Wskaż, gdzie chcesz postawić pionka:'
 
 
@@ -183,7 +271,7 @@ class Checkers():
             x += x_step
             y += y_step
             while colBorder[x_dir](x) and colBorder[y_dir](y):
-                result.append(self._board[y][x])
+                result.append(self.__board[y][x])
                 x += x_step
                 y += y_step
 
@@ -232,6 +320,9 @@ class Checkers():
                         return True
                 else:
                     if (not x.isRedundant()) and (x.getPlayer() != player):
+                        # Nie można przekoczyć dwóch sklejonych pionków!
+                        if enemySpotted:
+                            return False
                         enemySpotted = True
                     else:
                         return False
@@ -273,17 +364,23 @@ class Checkers():
 
         # Czy pionek może poruszać się o więcej niż jedno pole?
         if d_step > 0:
-            if not self._multiFightPawn.canTakeMultipleSteps():
+            if not self.__multiFightPawn.canTakeMultipleSteps():
                 if (d_step > 1) or (diagonal[0] is None):
                     return (0, 0)
 
-        player = self._multiFightPawn.getPlayer()
+        player = self.__multiFightPawn.getPlayer()
 
-        # Czy pionek próbuje przeskoczyć pionka swojego gracza?
+        # Czy pionek próbuje przeskoczyć pionka swojego gracza
+        # lub próbuje przeskoczyć dwa sklejone pionki?
+        glued = False
         for i in range((d_step - 1), (-1), (-1)):
-            if (diagonal[i] is not None) \
-            and (diagonal[i].getPlayer() == player):
-                return (0, 0)
+            if diagonal[i] is None:
+                glued = False
+            else:
+                if diagonal[i].isRedundant() or \
+                (diagonal[i].getPlayer() == player) or glued:
+                    return (0, 0)
+                glued = True
 
         # Oznacz wszystkie pionki na drodze jako martwe
         defeated_pawns = 0
@@ -295,7 +392,7 @@ class Checkers():
         # Jeżeli nie zbito żadnego pionka, to czy zaznaczony
         # pionek może poruszać się w danym kierunku (północ-południe)?
         if (defeated_pawns <= 0) \
-        and (not self._multiFightPawn.canMoveInDirection(direction >> 1)):
+        and (not self.__multiFightPawn.canMoveInDirection(direction >> 1)):
             return (0, 0)
 
         return ((d_step + 1), defeated_pawns)
@@ -307,11 +404,11 @@ class Checkers():
         Usunięcie wszystkich nieprawdziwych pionków po skończonym biciu.
         """
 
-        for y in range(len(self._board)):
-            for x, pawn in enumerate(self._board[y]):
+        for y in range(len(self.__board)):
+            for x, pawn in enumerate(self.__board[y]):
                 if pawn is not None:
                     if pawn.isRedundant():
-                        self._board[y][x] = None
+                        self.__board[y][x] = None
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -321,7 +418,7 @@ class Checkers():
         Dodatkowo następuje usunięcie pozycji wielokrotnego bicia.
         """
 
-        for row in self._board:
+        for row in self.__board:
             for pawn in row:
                 if (pawn is not None) \
                 and (AbstractPawn.STATE_GONE == pawn.getState()):
@@ -331,7 +428,7 @@ class Checkers():
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    def _updateGameData(self) -> None:
+    def __updateGameData(self) -> None:
         """
         Warcaby aktualizują dane odnośnie planszy.
         ----
@@ -340,25 +437,25 @@ class Checkers():
         Jeżeli na planszy zostanie tylko jeden pionek, to gra się kończy.
         """
 
-        self._obligatoryPawns = []
+        self.__obligatoryPawns = []
         left_pawns = [0, 0]
 
-        for y in range(len(self._board)):
-            for x, pawn in enumerate(self._board[y]):
+        for y in range(len(self.__board)):
+            for x, pawn in enumerate(self.__board[y]):
                 if pawn is not None:
                     player = pawn.getPlayer()
                     left_pawns[player] += 1
 
-                    if (player == self._player) \
+                    if (player == self.__player) \
                     and self.canPawnFight(pawn, x, y):
-                        self._obligatoryPawns.append((x, y))
+                        self.__obligatoryPawns.append((x, y))
 
         # Czy na planszy nie został żaden pionek któregoś z graczy?
         for i, c in enumerate(left_pawns):
             if c <= 0:
                 # Zwycięzcą jest gracz, którego pionki zostały
-                self._player = i ^ 1
-                self._state = self.GAMESTATE_END
+                self.__player = i ^ 1
+                self.__state = self.GAMESTATE_END
                 return
 
 
@@ -372,59 +469,61 @@ class Checkers():
          * `y`: indeks wiersza, od góry do dołu [0-7].
         """
 
+        self.__turninfo = self.TURNINFO_NOTHING
+
         checkPawns = False
 
         def subprocess() -> bool:
 
             # Czy wybrano "białe" pole zamiast pola "czarnego"?
-            if (not ((x & 1) ^ (y & 1))):
+            if not ((x & 1) ^ (y & 1)):
                 return False
 
             # Czy gracz powinien wybrać pionka?
-            if self.GAMESTATE_TAKE == self._state:
+            if self.GAMESTATE_TAKE == self.__state:
 
                 # Czy jakikolwiek pionek w ogóle istnieje na danym polu?
                 # Jeśli nie, to przypomnij o wybraniu właściwego pola.
-                if self._board[y][x] is None:
+                if self.__board[y][x] is None:
                     return True
 
                 # Czy gracz wybrał swojego pionka?
-                if self._board[y][x].getPlayer() != self._player:
-                    self._turninfo = self.TURNINFO_WRONG_PLAYER
+                if self.__board[y][x].getPlayer() != self.__player:
+                    self.__turninfo = self.TURNINFO_WRONG_PLAYER
                     return True
 
                 # Czy gracz powinien wykonać obowiązkowe bicie?
-                if len(self._obligatoryPawns) > 0:
-                    if (x, y) not in self._obligatoryPawns:
-                        self._turninfo = self.TURNINFO_OBLIG_FIGHT
+                if len(self.__obligatoryPawns) > 0:
+                    if (x, y) not in self.__obligatoryPawns:
+                        self.__turninfo = self.TURNINFO_OBLIG_FIGHT
                         return True
 
-                self._multiFightPawn = self._board[y][x]
-                self._multiFightPawn.setState(AbstractPawn.STATE_SELECTED)
-                self._selectedPawnPos = (x, y)
-                self._fightingPawnPos = self._selectedPawnPos
-                self._state = self.GAMESTATE_PUT
+                self.__multiFightPawn = self.__board[y][x]
+                self.__multiFightPawn.setState(AbstractPawn.STATE_SELECTED)
+                self.__selectedPawnPos = (x, y)
+                self.__fightingPawnPos = self.__selectedPawnPos
+                self.__state = self.GAMESTATE_PUT
                 return True
 
             # Czy gracz powinien przesunąć pionka?
-            if self.GAMESTATE_PUT == self._state:
+            if self.GAMESTATE_PUT == self.__state:
                 no_more_moves = False
                 accept_move = False
-                sx, sy = self._selectedPawnPos
-                fx, fy = self._fightingPawnPos
+                sx, sy = self.__selectedPawnPos
+                fx, fy = self.__fightingPawnPos
 
                 # Domyślnie zakończ każdą turę zmieniając stan
                 # na wymagane podniesienie kolejnego pionka
-                self._state = self.GAMESTATE_TAKE
+                self.__state = self.GAMESTATE_TAKE
 
                 # Czy odklikniętio zaznaczonego pionka?
                 if (sx == x) and (sy == y):
-                    self._turninfo = self.TURNINFO_CANCELLED
+                    self.__turninfo = self.TURNINFO_CANCELLED
                     no_more_moves = True
 
                 # Czy dane pole jest zablokowane przez innego pionka?
-                elif self._board[y][x] is not None:
-                    self._turninfo = self.TURNINFO_INVALID_MOVE
+                elif self.__board[y][x] is not None:
+                    self.__turninfo = self.TURNINFO_INVALID_MOVE
                     no_more_moves = True
 
                 else:
@@ -437,15 +536,15 @@ class Checkers():
                         if b > 0:
 
                             # Czy zaznaczony pionek może bić dalej?
-                            if self.canPawnFight(self._multiFightPawn, x, y):
+                            if self.canPawnFight(self.__multiFightPawn, x, y):
 
                                 # Dodanie pośredniego pola bicia
-                                self._board[y][x] = AbstractPawn()
-                                self._fightingPawnPos = (x, y)
+                                self.__board[y][x] = AbstractPawn()
+                                self.__fightingPawnPos = (x, y)
 
                                 # Pozostanie w stanie przeskakiwania na pola
-                                self._state = self.GAMESTATE_PUT
-                                self._turninfo = self.TURNINFO_FIGHT_AGAIN
+                                self.__state = self.GAMESTATE_PUT
+                                self.__turninfo = self.TURNINFO_FIGHT_AGAIN
                                 return True
                             else:
                                 no_more_moves = True
@@ -455,36 +554,36 @@ class Checkers():
 
                             # Nie zbito żadnego pionka, ale istnieje
                             # przynajmniej jedno obowiązkowe bicie!
-                            if len(self._obligatoryPawns) > 0:
-                                self._turninfo = self.TURNINFO_INVALID_MOVE
+                            if len(self.__obligatoryPawns) > 0:
+                                self.__turninfo = self.TURNINFO_INVALID_MOVE
                             else:
                                 accept_move = True
 
                     else:
-                        self._turninfo = self.TURNINFO_INVALID_MOVE
+                        self.__turninfo = self.TURNINFO_INVALID_MOVE
                         no_more_moves = True
 
                 # Odznaczenie pionka, kiedy nie może już się poruszać.
                 if no_more_moves:
-                    self._multiFightPawn.setState(AbstractPawn.STATE_STANDBY)
+                    self.__multiFightPawn.setState(AbstractPawn.STATE_STANDBY)
 
                 # Przeniesienie zaznaczonego pionka na nową pozycję
                 # oraz usunięcie zbędnych (pokonanych i pośrednich) pionków
                 if accept_move:
-                    pawn = self._board[sy][sx]
-                    self._board[y][x] = pawn
-                    self._board[sy][sx] = None
+                    pawn = self.__board[sy][sx]
+                    self.__board[y][x] = pawn
+                    self.__board[sy][sx] = None
                     self.removeMarkedPawns()
 
                     # Czy pionek może awansować?
-                    promotion = (0, len(self._board) - 1)
+                    promotion = (0, len(self.__board) - 1)
                     if (type(pawn) == WeakPawn) \
-                    and promotion[self._player] == y:
-                        self._board[y][x] = StrongPawn(self._player)
+                    and promotion[self.__player] == y:
+                        self.__board[y][x] = StrongPawn(self.__player)
 
                     # Przekazanie tury dla kolejnego gracza oraz sprawdzenie
                     # stanu planszy po przeniesieniu jednego pionka.
-                    self._player = self._player ^ 1
+                    self.__player = self.__player ^ 1
                     nonlocal checkPawns
                     checkPawns = True
                 else:
@@ -496,7 +595,7 @@ class Checkers():
 
         t = subprocess()
         if checkPawns:
-            self._updateGameData()
+            self.__updateGameData()
         return t
 
 

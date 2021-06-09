@@ -1,5 +1,5 @@
 ################################################################
-# Warcaby: "TkinterUi.py"
+# Warcaby: "/src/TkinterUi.py"
 ################################################################
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -26,15 +26,13 @@ class TkinterUi(AbstractUi):
     LABEL_WIDTH = WINDOW_WIDTH - 2 * LABEL_X
     LABEL_HEIGHT = 32
 
-    BOARD_SIZE = 8
-
     BOARDBTN_WIDTH = 48
     BOARDBTN_HEIGHT = 48
     BOARDBTN_DARKCOLOR = '#A4795D'
     BOARDBTN_LIGHTCOLOR = '#DBCCA3'
 
-    BOARD_WIDTH = BOARD_SIZE * BOARDBTN_WIDTH
-    BOARD_HEIGHT = BOARD_SIZE * BOARDBTN_HEIGHT
+    BOARD_WIDTH = Checkers.BOARD_SIZE * BOARDBTN_WIDTH
+    BOARD_HEIGHT = Checkers.BOARD_SIZE * BOARDBTN_HEIGHT
     BOARD_X = 16
     BOARD_Y = 64
 
@@ -56,25 +54,25 @@ class TkinterUi(AbstractUi):
 
         # Główne okno Tkinter
 
-        self._master = tkinter.Tk()
+        self.__master = tkinter.Tk()
 
-        self._master.title(self.WINDOW_TITLE)
-        self._master.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
+        self.__master.title(self.WINDOW_TITLE)
+        self.__master.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
 
         # Etykieta na komunikaty
 
         msgFrame = tkinter.Frame (
-            self._master, borderwidth = 2, relief = tkinter.SUNKEN,
+            self.__master, borderwidth = 2, relief = tkinter.SUNKEN,
             width = self.LABEL_WIDTH, height = self.LABEL_HEIGHT,
             bg = '#FFFFFF'
         )
 
-        self._msgLabel = tkinter.Label (
+        self.__msgLabel = tkinter.Label (
             msgFrame, text = 'Rozpocznij nową grę!',
             font = self.FONT, bg = '#FFFFFF'
         )
 
-        self._msgLabel.pack(fill = tkinter.BOTH, expand = True)
+        self.__msgLabel.pack(fill = tkinter.BOTH, expand = True)
 
         msgFrame.pack_propagate(False)
         msgFrame.place(x = self.LABEL_X, y = self.LABEL_Y)
@@ -82,18 +80,18 @@ class TkinterUi(AbstractUi):
         # Przyciski na planszy
 
         buttonsFrame = tkinter.Frame (
-            self._master,
+            self.__master,
             width = 16 + self.BOARD_WIDTH,
             height = 16 + self.BOARD_HEIGHT,
             bg = '#000000'
         )
 
-        self._boardButtons = []
+        self.__boardButtons = []
 
-        for y in range(self.BOARD_SIZE):
+        for y in range(Checkers.BOARD_SIZE):
             rowOfButtons = []
 
-            for x in range(self.BOARD_SIZE):
+            for x in range(Checkers.BOARD_SIZE):
                 boardButton = tkinter.Button(buttonsFrame)
 
                 boardButton.place (
@@ -107,7 +105,7 @@ class TkinterUi(AbstractUi):
                     rowOfButtons.append(boardButton)
 
                     boardButton['bg'] = self.BOARDBTN_DARKCOLOR
-                    boardButton['fg'] = self.BOARDBTN_LIGHTCOLOR
+                    boardButton['fg'] = '#FFFFFF'
                     boardButton['font'] = self.FONT
 
                     boardButton['command'] = \
@@ -120,7 +118,7 @@ class TkinterUi(AbstractUi):
                     boardButton['relief'] = tkinter.SUNKEN
                     boardButton['state'] = tkinter.DISABLED
 
-            self._boardButtons.append(rowOfButtons)
+            self.__boardButtons.append(rowOfButtons)
 
         buttonsFrame.pack_propagate(False)
         buttonsFrame.place(x = self.BOARD_X, y = self.BOARD_Y)
@@ -128,7 +126,7 @@ class TkinterUi(AbstractUi):
         # Przycisk resetujący grę
 
         resetFrame = tkinter.Frame (
-            self._master,
+            self.__master,
             width = self.RESETBTN_WIDTH,
             height = self.RESETBTN_HEIGHT,
         )
@@ -150,24 +148,24 @@ class TkinterUi(AbstractUi):
         """Patrz: `AbstractUi.enable`."""
 
         if state:
-            self._master.mainloop()
+            self.__master.mainloop()
 
         else:
-            self._master.destroy()
+            self.__master.destroy()
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     def updateBoard(self) -> None:
-        """Patrz: `AbstractIi.updateBoard`."""
+        """Patrz: `AbstractUi.updateBoard`."""
 
         textBoard = self._checkers.getTextBoard()
 
-        for y in range(self.BOARD_SIZE):
-            for x in range(self.BOARD_SIZE):
+        for y in range(Checkers.BOARD_SIZE):
+            for x in range(Checkers.BOARD_SIZE):
                 if (x & 1) ^ (y & 1):
-                    self._boardButtons[y][x]['text'] = textBoard[y][x]
+                    self.__boardButtons[y][x]['text'] = textBoard[y][x]
 
-        self._msgLabel['text'] = self._checkers.getTextState()
+        self.__msgLabel['text'] = self._checkers.getTextState()
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

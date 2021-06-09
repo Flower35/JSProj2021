@@ -1,5 +1,5 @@
 ################################################################
-# Warcaby: "AbstractUi.py"
+# Warcaby: "/src/AbstractUi.py"
 ################################################################
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -20,6 +20,9 @@ class AbstractUi():
         ----
          * `checkers`: instancja Warcabów obsługiwana przez nowy interfejs.
         """
+
+        # Pole "protected", nie "private":
+        # umożliwienie bezpośrednieg dostępu do pola w klasach dzieczących.
 
         self._checkers = checkers
 
